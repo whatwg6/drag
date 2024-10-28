@@ -1,34 +1,58 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState, useRef } from 'react'
+
+import { useDrag, useDrop } from "ahooks"
+
 import './App.css'
 
+let dragTarget = null
+
+const DragItem = ({ data, onChange }) => {
+  const ref = useRef(null)
+
+  useDrag(data, ref, {
+    onDragStart: () => {
+      dragTarget = ref.current
+    },
+    onDragEnd: () => {
+      dragTarget = null
+    },
+  });
+
+  useDrop(ref, {
+    onDragEnter: (e) => {
+      const target = e.target
+      onChange(dragTarget, target)
+    },
+  });
+
+  return <div className='item' draggable ref={ref} data-id={data}>{data}</div>
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [list, setList] = useState(['A', 'B', "C", "D"])
+
+  const handleChange = (dragTarget, target) => {
+    console.log(dragTarget === target, dragTarget, target)
+
+    if (dragTarget === target) return
+
+    const index1 = list.findIndex(el => el === dragTarget.dataset.id)
+    const index2 = list.findIndex(el => el === target.dataset.id)
+
+
+    setList(list => {
+      [list[index1], list[index2]] = [list[index2], list[index1]]
+
+      console.log('set')
+
+      return list.slice(0)
+    })
+  }
+
+  console.log(list)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    list.map((el) => <DragItem data={el} onChange={handleChange} key={el} />)
   )
 }
 
